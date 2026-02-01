@@ -64,7 +64,7 @@ This pipeline converts raw web data into **decision-ready business intelligence*
 
 ---
 
-## 📈 Analytics & Visualizations (Exactly 10)
+## 📈 Analytics & Visualizations
 
 1. KPI Cards / Scorecards  
 2. Line Chart (Trend Analysis)  
