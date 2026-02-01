@@ -83,6 +83,7 @@ These charts are designed using consistent color palettes and labeling conventio
 
 ## 🏗️ Architecture Overview
 
+```
 Web Source
 ↓
 Selenium Scraper
@@ -98,9 +99,23 @@ Analytics Engine
 Professional Charts (PNG + Base64)
 ↓
 Dashboard / Web Integration
+```
 
 
 ---
+
+## 📂 Project Structure
+
+```
+B2B_Data_Pipeline/
+│
+├── crawler.py
+├── clean_data.py
+├── analysis.py
+├── clean_data.csv
+├── plots/
+└── README.md
+```
 
 ## 🛠️ Tech Stack
 
