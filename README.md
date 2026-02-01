@@ -43,7 +43,7 @@ This project solves that problem by building an automated pipeline that:
 
 ## 🏗️ Architecture
 
-```text
+
 B2B_Data_Pipeline/
 │
 ├── crawler.py          # Selenium web scraping
@@ -52,6 +52,8 @@ B2B_Data_Pipeline/
 ├── plots/             # Generated professional charts (PNG)
 ├── requirements.txt  # Project dependencies
 └── README.md
+
+---
 
 ## 🔄 Data Pipeline Flow
 
