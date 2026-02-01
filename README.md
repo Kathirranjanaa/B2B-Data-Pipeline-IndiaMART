@@ -12,7 +12,7 @@ This project demonstrates real-world practices in:
 
 The pipeline follows a complete workflow:
 
-> **Scrape → Clean → Analyze → Visualize → Export**
+> Scrape → Clean → Analyze → Visualize → Export  
 
 Built with scalability, performance, and professional reporting standards in mind.
 
@@ -28,7 +28,7 @@ This project solves that problem by implementing a **production-style B2B analyt
 - Cleans and standardizes raw datasets  
 - Generates business KPIs  
 - Produces exactly **10 professional analytical charts**  
-- Exports outputs as PNG + Base64 (dashboard-ready for Django / web apps)
+- Exports outputs as PNG + Base64 (dashboard-ready for Django / web apps)  
 
 The system is optimized for large datasets and uses a fast, stable visualization backend suitable for enterprise environments.
 
@@ -38,7 +38,7 @@ The system is optimized for large datasets and uses a fast, stable visualization
 
 B2B platforms contain massive volumes of unstructured product and supplier information. Organizations often struggle to transform this data into actionable insights.
 
-Key challenges addressed:
+### Key challenges addressed:
 
 - Manual data collection overhead  
 - Inconsistent and noisy raw data  
@@ -56,7 +56,7 @@ This pipeline converts raw web data into **decision-ready business intelligence*
 - Structured data cleaning and preprocessing  
 - Feature engineering (price buckets, regions, numeric normalization)  
 - KPI computation for business decision-making  
-- Generation of exactly **10 industry-standard charts**  
+- Generation of exactly 10 industry-standard charts  
 - Export of charts as PNG and Base64  
 - Dashboard-ready architecture (Django compatible)  
 - Optimized Matplotlib backend for speed and stability  
@@ -65,8 +65,6 @@ This pipeline converts raw web data into **decision-ready business intelligence*
 ---
 
 ## 📈 Analytics & Visualizations (Exactly 10)
-
-The pipeline produces the following professional analytics:
 
 1. KPI Cards / Scorecards  
 2. Line Chart (Trend Analysis)  
@@ -77,7 +75,7 @@ The pipeline produces the following professional analytics:
 7. Map Chart (City Index / Geographic Approximation)  
 8. Combo Chart (Bar + Line)  
 9. Treemap (Category Contribution)  
-10. Scatter Plot (Price vs Rating / Density Analysis)
+10. Scatter Plot (Price vs Rating / Density Analysis)  
 
 These charts are designed using consistent color palettes and labeling conventions to match industry dashboard standards.
 
@@ -119,36 +117,35 @@ Dashboard / Web Integration
 
 B2B_Data_Pipeline/
 │
-├── crawler.py # Web scraping logic
-├── clean_data.py # Data cleaning & preprocessing
-├── analysis.py # Analytics + visualization engine
-├── clean_data.csv # Processed dataset
-├── plots/ # Generated chart outputs
+├── crawler.py
+├── clean_data.py
+├── analysis.py
+├── clean_data.csv
+├── plots/
 └── README.md
 
 
 ---
 
+## 🎯 Use Cases
 
-🎯 Use Cases
-B2B Market Analysis
+- B2B Market Analysis  
+- Supplier Performance Evaluation  
+- Regional Demand Insights  
+- Pricing Distribution Analysis  
+- Dashboard Reporting Pipelines  
+- Data Engineering Portfolio Demonstration  
 
-Supplier Performance Evaluation
+---
 
-Regional Demand Insights
+## 🔗 Connect With Me
 
-Pricing Distribution Analysis
+- 💼 LinkedIn: https://www.linkedin.com/in/kathir-ranjanaa-s/
+- 💻 GitHub: https://github.com/Kathirranjanaa
+- 📧 Email: kathirranjanaas@gmail.com
 
-Dashboard Reporting Pipelines
+---
 
-Data Engineering Portfolio Demonstration
+## 📜 License
 
-
-👤 Author
-Kathir Ranjanaa S.
-Aspiring Data Engineer | Full Stack Developer | Entrepreneur
-
-Focused on building scalable data systems and transforming raw data into business impact.
-
-📜 License
 This project is open-source and available under the MIT License.
