@@ -129,19 +129,6 @@ B2B_Data_Pipeline/
 
 ---
 
-## ▶️ How to Run
-
-### 1. Install dependencies
-
-```bash
-pip install selenium pandas numpy matplotlib
-2. Run scraper
-python crawler.py
-3. Clean dataset
-python clean_data.py
-4. Generate analytics
-python analysis.py
-Charts will be saved inside the plots/ directory.
 
 🎯 Use Cases
 B2B Market Analysis
@@ -156,16 +143,6 @@ Dashboard Reporting Pipelines
 
 Data Engineering Portfolio Demonstration
 
-📌 Future Enhancements
-Database integration (PostgreSQL / MySQL)
-
-REST API layer for analytics delivery
-
-Real-time scraping pipelines
-
-Cloud deployment
-
-Interactive dashboards
 
 👤 Author
 Kathir Ranjanaa S.
