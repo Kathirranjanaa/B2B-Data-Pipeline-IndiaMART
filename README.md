@@ -136,10 +136,10 @@ Outputs:
 ## 🖼️ Sample Dashboard Outputs
 
 ### Dashboard Snapshot – KPIs & Key Charts
-![Dashboard Snapshot](./screenshots/dashboard_snapshot.png)
+![Dashboard Snapshot](./screenshot/dashboard_snapshot.png)
 
 ### Top Cities – Listings Concentration
-![Top Cities](./screenshots/top_cities.png)
+![Top Cities](./screenshot/top_cities.png)
 
 These screenshots showcase:
 - KPI summary (records, suppliers, cities, median price)
