@@ -104,18 +104,6 @@ Dashboard / Web Integration
 
 ---
 
-## 📂 Project Structure
-
-```
-B2B_Data_Pipeline/
-│
-├── crawler.py
-├── clean_data.py
-├── analysis.py
-├── clean_data.csv
-├── plots/
-└── README.md
-```
 
 ## 🛠️ Tech Stack
 
@@ -130,6 +118,7 @@ B2B_Data_Pipeline/
 
 ## 📂 Project Structure
 
+```
 B2B_Data_Pipeline/
 │
 ├── crawler.py
@@ -138,7 +127,7 @@ B2B_Data_Pipeline/
 ├── clean_data.csv
 ├── plots/
 └── README.md
-
+```
 
 ---
 
