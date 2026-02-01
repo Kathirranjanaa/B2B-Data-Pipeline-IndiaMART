@@ -28,6 +28,19 @@ The output can be directly integrated into dashboards or web applications.
 
 ---
 
+## 🧩 Problem Statement
+
+Businesses often lack structured insights from unorganized B2B web data.  
+Manual collection and analysis is slow, error-prone, and not scalable.
+
+This project solves that problem by building an automated pipeline that:
+- Collects B2B product data  
+- Cleans and standardizes it  
+- Produces business-ready analytics  
+- Generates dashboard-grade visualizations  
+
+---
+
 ## 🏗️ Architecture
 
 ```text
@@ -105,6 +118,8 @@ pip install -r requirements.txt
 
 ```bash
 python crawler.py
+
+
 This generates raw data.
 
 ### 4️⃣ Run Analytics Pipeline
@@ -115,6 +130,47 @@ python analysis.py
 Outputs:
 - `clean_data.csv`
 - 10 professional PNG charts inside `/plots`
+
+---
+
+## 🖼️ Sample Dashboard Outputs
+
+### Dashboard Snapshot – KPIs & Key Charts
+![Dashboard Snapshot](./screenshots/dashboard_snapshot.png)
+
+### Top Cities – Listings Concentration
+![Top Cities](./screenshots/top_cities.png)
+
+These screenshots showcase:
+- KPI summary (records, suppliers, cities, median price)
+- Price distribution trend
+- Bucket mix (Low / Mid / High)
+- Top states
+- Top cities concentration
+
+They demonstrate the dashboard-ready analytics generated from the pipeline.
+
+
+---
+
+## 📌 Project Metrics
+
+- Dataset Size: 300+ records  
+- Charts Generated: 10  
+- Pipeline Stages: 4  
+- Automation Level: Fully automated  
+
+---
+
+## 📚 Key Learnings
+
+- Built an end-to-end data pipeline using Python  
+- Implemented Selenium-based web automation  
+- Performed real-world data cleaning and preprocessing  
+- Designed professional analytics visualizations  
+- Optimized Matplotlib for large datasets  
+- Prepared outputs for dashboard integration  
+- Applied business thinking to technical analytics  
 
 ---
 
@@ -132,22 +188,9 @@ Outputs:
 ## 🎯 Project Highlights
 
 ✅ End-to-end data pipeline  
-✅ Industry-style analytics  
 ✅ Dashboard-ready exports  
 ✅ Handles large datasets safely  
-✅ Professional visualization layout  
 ✅ Real business applicability  
-
----
-
-## 🔮 Future Enhancements
-
-- Django web dashboard integration  
-- Automated scheduling (cron jobs)  
-- Database storage (PostgreSQL/MySQL)  
-- Power BI / Tableau connectors  
-- API layer for real-time analytics  
-- Machine Learning for price prediction  
 
 ---
 
@@ -155,5 +198,5 @@ Outputs:
 
 **Kathir Ranjanaa S.**  
 
-- GitHub: https://github.com/Kathirranjanaa
+- GitHub: https://github.com/Kathirranjanaa  
 - LinkedIn: https://www.linkedin.com/in/kathir-ranjanaa-s/
