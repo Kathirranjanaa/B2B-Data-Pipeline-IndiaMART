@@ -1,0 +1,16 @@
+﻿column,dtype,missing_count,missing_pct
+price_unit,str,225,57.54
+rating,float64,106,27.11
+price_numeric,float64,105,26.85
+supplier_name,str,0,0.0
+product_name,str,0,0.0
+search_keyword,str,0,0.0
+state,str,0,0.0
+city,str,0,0.0
+catid,int64,0,0.0
+mcatid,int64,0,0.0
+dispid,int64,0,0.0
+itemid,int64,0,0.0
+price_bucket,str,0,0.0
+supplier_region,str,0,0.0
+__DATASET__,n/a,0,0.0

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load utils %}
+
+{% block title %}Data Table | B2B Dashboard{% endblock %}
+{% block page_title %}Data Table{% endblock %}
+{% block page_subtitle %}Quick validation view (top rows){% endblock %}
+
+{% block content %}
+<div class="cardx p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="fw-semibold">Top {{ rows|length }} rows</div>
+    <div class="chip">clean_data.csv</div>
+  </div>
+
+  {% if rows|length == 0 %}
+    <div class="text-secondary">No data found. Make sure clean_data.csv exists in B2B_Data_Pipeline/</div>
+  {% else %}
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          {% for c in columns %}<th>{{ c }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            {% for c in columns %}
+              {% if c == "price_numeric" %}
+                <td>{{ r|get_item:c|inr }}</td>
+              {% else %}
+                <td>{{ r|get_item:c|display_cell }}</td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

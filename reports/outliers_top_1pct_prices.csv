@@ -1,0 +1,4 @@
+﻿search_keyword,product_name,supplier_name,city,state,rating,catid,mcatid,itemid,dispid,price_numeric,price_unit,price_bucket,supplier_region
+laundry washing machine,"Industrial Laundry Washing Machine, Rated Capacity: 50-100, 5.5-7.5 Kw",Ess Ell Trades,Tiruppur,Tamil Nadu,4.1,164,11370,157049789,22794131173,850000.0,,High (50k+),South
+laundry washing machine,"Laundry Washing Machine, Front Loading",Gowda Machinery,Bengaluru,Karnataka,4.2,164,11370,311825451,2857722645312,540000.0,,High (50k+),South
+robot vacuum cleaner,Smart Cleaning Robot (10000 Sq Ft/hr),Clarion Ai Technologies Private Limited,Coimbatore,Tamil Nadu,,787,147097,312795693,2857819669573,800000.0,,High (50k+),South

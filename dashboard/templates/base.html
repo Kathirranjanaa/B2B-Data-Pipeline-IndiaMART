@@ -1,0 +1,421 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{% block title %}B2B Dashboard{% endblock %}</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Export helpers -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    /* =========================
+       THEME TOKENS
+       ========================= */
+    :root{
+      --bg:#0b1220;
+      --panel:#0f172a;
+      --panel2:#111a2e;
+
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+
+      --border:rgba(148,163,184,.16);
+      --grid: rgba(148,163,184,.12);
+
+      --card:rgba(17,26,46,.55);
+      --shadow:0 12px 30px rgba(0,0,0,.22);
+
+      --chip-bg:rgba(255,255,255,.03);
+      --chip-br:rgba(148,163,184,.16);
+
+      --ring: rgba(255,255,255,.06);
+    }
+
+    html[data-theme="light"]{
+      --bg:#f5f7fb;
+      --panel:#ffffff;
+      --panel2:#ffffff;
+
+      --text:#0b1220;
+      --muted:#475569;
+
+      --border:rgba(2,6,23,.10);
+      --grid: rgba(2,6,23,.08);
+
+      --card:#ffffff;
+      --shadow:0 10px 24px rgba(2,6,23,.08);
+
+      --chip-bg:rgba(2,6,23,.03);
+      --chip-br:rgba(2,6,23,.10);
+
+      --ring: rgba(2,6,23,.05);
+    }
+
+    /* Ensure native controls look correct in both themes */
+    html[data-theme="dark"] { color-scheme: dark; }
+    html[data-theme="light"] { color-scheme: light; }
+
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+
+    .shell{min-height:100vh;display:flex;}
+
+    .sidebar{
+      width:280px;
+      background:linear-gradient(180deg,var(--panel2),var(--panel));
+      border-right:1px solid var(--border);
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .brand{font-weight:900;letter-spacing:.3px;}
+
+    .nav-link{
+      color:var(--muted);
+      border-radius:14px;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+    }
+    .nav-link:hover{background:rgba(255,255,255,.06);color:var(--text);}
+    html[data-theme="light"] .nav-link:hover{background:rgba(2,6,23,.04);}
+
+    .nav-link.active{
+      background:rgba(99,102,241,.15);
+      color:var(--text);
+      border:1px solid rgba(99,102,241,.25);
+    }
+
+    .content{flex:1; padding:22px;}
+
+    .topbar{
+      background:rgba(17,26,46,.60);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:14px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      backdrop-filter: blur(10px);
+    }
+    html[data-theme="light"] .topbar{ background:rgba(255,255,255,.78); }
+
+    .cardx{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+    }
+
+    .kpi-title{color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.8px;}
+    .kpi-value{font-size:26px; font-weight:900;}
+    .kpi-sub{color:var(--muted); font-size:12px;}
+
+    .chip{
+      border:1px solid var(--chip-br);
+      border-radius:999px;
+      padding:8px 12px;
+      color:var(--text);
+      background:var(--chip-bg);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+      text-decoration:none;
+    }
+    .chip:hover{filter:brightness(1.06);}
+    .chip.soft{
+      background:rgba(56,189,248,.14);
+      border:1px solid rgba(56,189,248,.25);
+    }
+
+    .kpi-row{display:flex; justify-content:space-between; gap:10px; align-items:flex-start;}
+    .kpi-ico{
+      width:38px; height:38px;
+      border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+    }
+    html[data-theme="light"] .kpi-ico{ background:rgba(2,6,23,.03); }
+
+    .trend{font-size:12px; color:var(--muted); display:inline-flex; gap:6px; align-items:center;}
+    .trend.good{color:#22c55e;}
+    .trend.bad{color:#ef4444;}
+
+    .spark-wrap{height:36px; margin-top:8px;}
+    .spark-wrap canvas{height:36px !important;}
+
+    /* Chart containers (sharp + consistent) */
+    .chart-wrap{position:relative; height:340px;}
+    .chart-wrap.sm{height:260px;}
+    .chart-wrap.xs{height:210px;}
+    canvas{width:100% !important; height:100% !important;}
+
+    /* =========================
+       ✅ FIX: SELECT DROPDOWNS VISIBILITY
+       ========================= */
+    .form-select, .form-control{
+      background:var(--chip-bg);
+      color:var(--text);
+      border:1px solid var(--border);
+    }
+    .form-select:focus, .form-control:focus{
+      box-shadow:none;
+      border-color:rgba(99,102,241,.55);
+    }
+
+    /* options panel */
+    .form-select option{
+      background: var(--panel);
+      color: var(--text);
+    }
+    .form-select option:checked{
+      background: rgba(99,102,241,.25);
+      color: var(--text);
+    }
+
+    html[data-theme="light"] .form-select option{
+      background:#ffffff;
+      color:#0b1220;
+    }
+    html[data-theme="light"] .form-select option:checked{
+      background:#dbeafe;
+      color:#0b1220;
+    }
+
+    /* =========================
+       ✅ FIX: BOOTSTRAP TABLE WHITE-ON-WHITE
+       ========================= */
+    .table{
+      --bs-table-bg: transparent !important;
+      --bs-table-color: var(--text) !important;
+      --bs-table-border-color: var(--border) !important;
+
+      --bs-table-striped-bg: rgba(255,255,255,.03);
+      --bs-table-striped-color: var(--text);
+
+      --bs-table-hover-bg: rgba(255,255,255,.05);
+      --bs-table-hover-color: var(--text);
+    }
+    html[data-theme="light"] .table{
+      --bs-table-striped-bg: rgba(2,6,23,.03);
+      --bs-table-hover-bg: rgba(2,6,23,.05);
+    }
+
+    /* =========================
+       ✅ NEW: PROJECT BULLET POINTS (sidebar)
+       ========================= */
+    .proj-bullets{
+      margin:10px 0 0 0;
+      padding-left:16px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+    }
+    .proj-bullets li{ margin:4px 0; }
+  </style>
+</head>
+
+<body>
+<div class="shell" id="pageRoot">
+  <aside class="sidebar">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-grid-1x2-fill fs-4"></i>
+      <div>
+        <div class="brand">B2B Data Pipeline</div>
+        <div class="small" style="color:var(--muted)">Scrape → Clean → Insights</div>
+      </div>
+    </div>
+
+    <nav class="nav flex-column gap-1">
+      <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+        <i class="bi bi-speedometer2"></i> Overview
+      </a>
+      <a class="nav-link {% if '/charts/' in request.path %}active{% endif %}" href="/charts/">
+        <i class="bi bi-bar-chart-line"></i> Interactive Charts
+      </a>
+      <a class="nav-link {% if '/table/' in request.path %}active{% endif %}" href="/table/">
+        <i class="bi bi-table"></i> Data Table
+      </a>
+    </nav>
+
+    <!-- ✅ Project card (EXISTING) + ✅ bullets added (NEW) -->
+    <div class="mt-4 cardx p-3">
+      <div class="kpi-title">Project</div>
+      <div class="fw-semibold">IndiaMART B2B Analytics</div>
+
+
+      <!-- ✅ Added points WITHOUT replacing existing text -->
+      <ul class="proj-bullets">
+        <li>IndiaMART scraping → cleaned dataset pipeline</li>
+        <li>Dashboard KPIs: records, suppliers, cities, median price</li>
+        <li>Interactive charts + filters (state, keyword)</li>
+        <li>Quick validation table preview for top rows</li>
+        <li>PDF export + theme toggle (dark/light)</li>
+      </ul>
+    </div>
+
+    <div class="mt-auto pt-3 small" style="color:var(--muted)">
+      <div class="d-flex justify-content-between">
+        <span>Status</span><span class="chip soft" style="cursor:default">LOCAL</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="topbar mb-4">
+      <div>
+        <div class="h5 mb-0">{% block page_title %}Dashboard{% endblock %}</div>
+        <div class="small" style="color:var(--muted)">{% block page_subtitle %}Industrial analytics view{% endblock %}</div>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        {% block top_controls %}{% endblock %}
+
+        <button class="chip" id="themeBtn" type="button" title="Toggle theme">
+          <i class="bi bi-moon-stars"></i>
+          <span class="d-none d-md-inline">Theme</span>
+        </button>
+
+        <button class="chip soft" id="exportPdfBtn" type="button" title="Export to PDF">
+          <i class="bi bi-filetype-pdf"></i>
+          <span class="d-none d-md-inline">Export</span>
+        </button>
+      </div>
+    </div>
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Global palette
+  window.DASH_COLORS = {
+    indigo: "#6366f1",
+    cyan:   "#22d3ee",
+    emerald:"#22c55e",
+    amber:  "#f59e0b",
+    rose:   "#fb7185",
+    violet: "#a78bfa",
+    slate:  "#94a3b8",
+  };
+
+  window.withAlpha = function(hex, a){
+    const h = (hex || "#000000").replace("#","");
+    const r = parseInt(h.substring(0,2),16);
+    const g = parseInt(h.substring(2,4),16);
+    const b = parseInt(h.substring(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  };
+
+  // Theme toggle
+  const THEME_KEY = "b2b_theme_v1";
+
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+
+    const btn = document.getElementById("themeBtn");
+    if(btn){
+      btn.innerHTML = (theme === "light")
+        ? `<i class="bi bi-sun"></i><span class="d-none d-md-inline">Theme</span>`
+        : `<i class="bi bi-moon-stars"></i><span class="d-none d-md-inline">Theme</span>`;
+    }
+
+    const isLight = theme === "light";
+
+    // Chart.js defaults (prevents white-on-white)
+    Chart.defaults.color = isLight ? "rgba(2,6,23,.86)" : "rgba(229,231,235,.88)";
+    Chart.defaults.borderColor = isLight ? "rgba(2,6,23,.10)" : "rgba(148,163,184,.12)";
+    Chart.defaults.font.family = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    Chart.defaults.devicePixelRatio = window.devicePixelRatio || 1;
+
+    window.dispatchEvent(new CustomEvent("b2b-theme-changed"));
+  }
+
+  (function initTheme(){
+    const saved = localStorage.getItem(THEME_KEY);
+    applyTheme(saved || "dark");
+  })();
+
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = (cur === "dark") ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
+
+  // Export to PDF
+  async function exportToPDF(){
+    const root = document.getElementById("pageRoot");
+    if(!root) return;
+
+    const btn = document.getElementById("exportPdfBtn");
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="bi bi-hourglass-split"></i><span class="d-none d-md-inline">Export</span>`;
+
+    await new Promise(r => setTimeout(r, 250));
+
+    const theme = document.documentElement.getAttribute("data-theme") || "dark";
+    const bg = (theme === "light") ? "#f5f7fb" : "#0b1220";
+
+    const canvas = await html2canvas(root, {
+      scale: 2,
+      backgroundColor: bg,
+      useCORS: true,
+      logging: false
+    });
+
+    const imgData = canvas.toDataURL("image/png", 1.0);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+
+    let y = 0;
+    let remaining = imgH;
+
+    while(remaining > 0){
+      pdf.addImage(imgData, "PNG", 0, y, imgW, imgH);
+      remaining -= pageH;
+      if(remaining > 0){
+        pdf.addPage();
+        y -= pageH;
+      }
+    }
+
+    pdf.save("B2B_Dashboard.pdf");
+    btn.disabled = false;
+    btn.innerHTML = prev;
+  }
+
+  document.getElementById("exportPdfBtn").addEventListener("click", exportToPDF);
+</script>
+
+{% block page_js %}{% endblock %}
+</body>
+</html>

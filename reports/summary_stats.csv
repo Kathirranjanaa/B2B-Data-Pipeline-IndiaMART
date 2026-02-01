@@ -1,0 +1,2 @@
+﻿total_rows,unique_suppliers,unique_cities,unique_states,missing_price_pct,missing_rating_pct,price_min,price_median,price_avg,price_max
+391,314,46,11,26.85,27.11,90.0,25250.0,64809.63636363636,850000.0

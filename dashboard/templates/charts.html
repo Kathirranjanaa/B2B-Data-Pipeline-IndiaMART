@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Charts | B2B Dashboard{% endblock %}
+{% block page_title %}Interactive Charts{% endblock %}
+{% block page_subtitle %}Filters update charts instantly (no reload){% endblock %}
+
+{% block top_controls %}
+<div class="d-flex gap-2 align-items-center">
+  <select id="stateSel" class="form-select form-select-sm" style="width:200px;">
+    <option value="">All States</option>
+  </select>
+  <select id="kwSel" class="form-select form-select-sm" style="width:220px;">
+    <option value="">All Keywords</option>
+  </select>
+  <button id="applyBtn" class="chip soft" type="button">
+    <i class="bi bi-funnel me-1"></i> Apply
+  </button>
+  <button id="resetBtn" class="chip" type="button">
+    <i class="bi bi-x-circle me-1"></i> Reset
+  </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  .section-title{font-weight:900; letter-spacing:.2px;}
+  .muted{color:var(--muted);}
+</style>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Records</div>
+          <div id="k_total" class="kpi-value">—</div>
+          <div class="kpi-sub">after filter</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-database fs-5"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Suppliers</div>
+          <div id="k_sup" class="kpi-value">—</div>
+          <div class="kpi-sub">unique</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-people fs-5"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Cities</div>
+          <div id="k_city" class="kpi-value">—</div>
+          <div class="kpi-sub">coverage</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-geo-alt fs-5"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Avg Price</div>
+          <div id="k_avg" class="kpi-value">—</div>
+          <div class="kpi-sub">after filter</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-currency-rupee fs-5"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Top Cities</div>
+          <div class="muted small">Listings concentration</div>
+        </div>
+        <span class="chip"><i class="bi bi-bar-chart me-1"></i> Top 12</span>
+      </div>
+      <div class="chart-wrap mt-2"><canvas id="cityChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Top States</div>
+          <div class="muted small">Regional distribution</div>
+        </div>
+        <span class="chip"><i class="bi bi-map me-1"></i> Top 12</span>
+      </div>
+      <div class="chart-wrap mt-2"><canvas id="stateChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Price Bucket Mix</div>
+          <div class="muted small">Low / Mid / High</div>
+        </div>
+        <span class="chip"><i class="bi bi-pie-chart me-1"></i> Mix</span>
+      </div>
+      <div class="chart-wrap sm mt-2"><canvas id="bucketChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Price Histogram</div>
+          <div class="muted small">Clipped 99th percentile</div>
+        </div>
+        <span class="chip"><i class="bi bi-graph-up me-1"></i> Dist</span>
+      </div>
+      <div class="chart-wrap sm mt-2"><canvas id="histChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Rating vs Price</div>
+          <div class="muted small">Heatmap-like scatter (alpha + sampling)</div>
+        </div>
+        <span class="chip"><i class="bi bi-brightness-high me-1"></i> Density</span>
+      </div>
+      <div class="chart-wrap mt-2"><canvas id="scatterChart"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script>
+  let cityChart, stateChart, bucketChart, histChart, scatterChart;
+
+  async function fetchJSON(url){ const r = await fetch(url); return await r.json(); }
+
+  function qs(){
+    const s = document.getElementById("stateSel").value;
+    const k = document.getElementById("kwSel").value;
+    const p = new URLSearchParams();
+    if(s) p.set("state", s);
+    if(k) p.set("keyword", k);
+    const q = p.toString();
+    return q ? ("?" + q) : "";
+  }
+
+  function formatINR(x){
+    try{ return "₹ " + Number(x).toLocaleString("en-IN", {maximumFractionDigits:0}); }
+    catch(e){ return "₹ " + x; }
+  }
+
+  function destroyAll(){
+    [cityChart, stateChart, bucketChart, histChart, scatterChart].forEach(ch => ch && ch.destroy());
+    cityChart = stateChart = bucketChart = histChart = scatterChart = null;
+  }
+
+  function makeBar(canvas, labels, values, color){
+    const ctx = canvas.getContext("2d");
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height || 400);
+    grad.addColorStop(0, withAlpha(color, 0.80));
+    grad.addColorStop(1, withAlpha(color, 0.18));
+
+    return new Chart(canvas, {
+      type:"bar",
+      data:{
+        labels,
+        datasets:[{
+          label:"Count",
+          data: values,
+          backgroundColor: grad,
+          borderColor: withAlpha(color, 0.95),
+          borderWidth: 1,
+          borderRadius: 12,
+          maxBarThickness: 44
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ ticks:{ color: Chart.defaults.color, maxRotation:0 }, grid:{ display:false } },
+          y:{ ticks:{ color: Chart.defaults.color }, grid:{ color: Chart.defaults.borderColor } }
+        },
+        animation:{ duration: 650 }
+      }
+    });
+  }
+
+  function makeDoughnut(canvas, labels, values){
+    const pal = [
+      DASH_COLORS.cyan, DASH_COLORS.indigo, DASH_COLORS.emerald,
+      DASH_COLORS.amber, DASH_COLORS.rose, DASH_COLORS.violet, DASH_COLORS.slate
+    ].slice(0, labels.length);
+
+    return new Chart(canvas, {
+      type:"doughnut",
+      data:{
+        labels,
+        datasets:[{
+          data: values,
+          backgroundColor: pal.map(c => withAlpha(c, 0.80)),
+          borderColor: pal.map(c => withAlpha(c, 1.0)),
+          borderWidth: 1
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        cutout:"72%",
+        plugins:{
+          legend:{ position:"bottom", labels:{ color: Chart.defaults.color, boxWidth:10 } }
+        },
+        animation:{ duration: 650 }
+      }
+    });
+  }
+
+  function makeLine(canvas, labels, values, color){
+    return new Chart(canvas, {
+      type:"line",
+      data:{
+        labels,
+        datasets:[{
+          label:"Count",
+          data: values,
+          tension:.35,
+          pointRadius: 2,
+          borderWidth: 2,
+          borderColor: withAlpha(color, 0.95),
+          backgroundColor: withAlpha(color, 0.14),
+          fill: true
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ ticks:{ color: Chart.defaults.color, maxRotation:0 }, grid:{ color: Chart.defaults.borderColor } },
+          y:{ ticks:{ color: Chart.defaults.color }, grid:{ color: Chart.defaults.borderColor } }
+        },
+        animation:{ duration: 650 }
+      }
+    });
+  }
+
+  // Heatmap-like scatter = tiny points + alpha + no border
+  function makeScatter(canvas, points){
+    return new Chart(canvas, {
+      type:"scatter",
+      data:{
+        datasets:[{
+          label:"Rating vs Price",
+          data: points,
+          pointRadius: 2,
+          pointHoverRadius: 4,
+          pointBackgroundColor: withAlpha(DASH_COLORS.cyan, 0.16),
+          pointBorderColor: "transparent"
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{
+            title:{display:true, text:"Rating", color: Chart.defaults.color},
+            ticks:{ color: Chart.defaults.color },
+            grid:{ color: Chart.defaults.borderColor }
+          },
+          y:{
+            title:{display:true, text:"Price (INR)", color: Chart.defaults.color},
+            ticks:{ color: Chart.defaults.color },
+            grid:{ color: Chart.defaults.borderColor }
+          }
+        },
+        animation:{ duration: 450 }
+      }
+    });
+  }
+
+  async function loadFilters(){
+    const f = await fetchJSON("/api/filters/");
+    const stateSel = document.getElementById("stateSel");
+    const kwSel = document.getElementById("kwSel");
+
+    // reset to keep first option
+    stateSel.length = 1;
+    kwSel.length = 1;
+
+    f.states.forEach(s => {
+      const o = document.createElement("option");
+      o.value = s; o.textContent = s;
+      stateSel.appendChild(o);
+    });
+
+    f.keywords.forEach(k => {
+      const o = document.createElement("option");
+      o.value = k; o.textContent = k;
+      kwSel.appendChild(o);
+    });
+  }
+
+  async function loadKPIs(){
+    const s = await fetchJSON("/api/summary/" + qs());
+    document.getElementById("k_total").innerText = s.total_rows.toLocaleString();
+    document.getElementById("k_sup").innerText = s.unique_suppliers.toLocaleString();
+    document.getElementById("k_city").innerText = s.unique_cities.toLocaleString();
+    document.getElementById("k_avg").innerText = formatINR(s.avg_price);
+  }
+
+  async function loadCharts(){
+    const q = qs();
+    const c = await fetchJSON("/api/top-cities/" + q);
+    const st = await fetchJSON("/api/top-states/" + q);
+    const b = await fetchJSON("/api/price-buckets/" + q);
+    const h = await fetchJSON("/api/price-hist/" + q);
+    const sc = await fetchJSON("/api/scatter-rating-price/" + q);
+
+    destroyAll();
+
+    cityChart   = makeBar(document.getElementById("cityChart"),  c.labels,  c.values,  DASH_COLORS.indigo);
+    stateChart  = makeBar(document.getElementById("stateChart"), st.labels, st.values, DASH_COLORS.cyan);
+    bucketChart = makeDoughnut(document.getElementById("bucketChart"), b.labels, b.values);
+    histChart   = makeLine(document.getElementById("histChart"), h.bins, h.counts, DASH_COLORS.emerald);
+    scatterChart= makeScatter(document.getElementById("scatterChart"), sc.points || []);
+  }
+
+  document.getElementById("applyBtn").addEventListener("click", async () => {
+    await loadKPIs();
+    await loadCharts();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", async () => {
+    document.getElementById("stateSel").value = "";
+    document.getElementById("kwSel").value = "";
+    await loadKPIs();
+    await loadCharts();
+  });
+
+  window.addEventListener("b2b-theme-changed", async () => {
+    // rebuild charts to apply new Chart.defaults colors
+    destroyAll();
+    await loadCharts();
+  });
+
+  (async function init(){
+    await loadFilters();
+    await loadKPIs();
+    await loadCharts();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}Overview | B2B Dashboard{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block page_subtitle %}KPIs + snapshot + quick preview{% endblock %}
+
+{% block top_controls %}
+<div class="d-flex gap-2 align-items-center">
+  <button id="btnRefresh" class="chip" type="button">
+    <i class="bi bi-arrow-repeat me-1"></i> Refresh
+  </button>
+
+  <a class="chip soft" href="/charts/">
+    <i class="bi bi-bar-chart-line me-1"></i> Open Charts
+  </a>
+
+  <a class="chip" href="/table/">
+    <i class="bi bi-table me-1"></i> Data Table
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  .section-title{font-weight:900; letter-spacing:.2px;}
+  .muted{color:var(--muted);}
+
+  /* Big snapshot frame */
+  .snap-frame{
+    background: radial-gradient(1200px 400px at 25% 0%, rgba(99,102,241,.18), transparent 55%),
+                radial-gradient(1000px 350px at 90% 15%, rgba(34,211,238,.16), transparent 55%),
+                var(--card);
+    border:1px solid var(--border);
+    border-radius:22px;
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
+  .snap-top{
+    padding:16px 18px;
+    border-bottom: 1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .snap-grid{
+    padding:16px 18px 18px 18px;
+    display:grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap:14px;
+  }
+  .snap-card{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background: rgba(255,255,255,.03);
+    padding:14px;
+  }
+  html[data-theme="light"] .snap-card{ background: rgba(2,6,23,.02); }
+
+  .snap-charts{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+  }
+
+  /* Mini table styling (fix white-on-white) */
+  .mini-table{
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .mini-table .table{
+    --bs-table-bg: transparent !important;
+    --bs-table-color: var(--text) !important;
+    --bs-table-border-color: var(--border) !important;
+
+    --bs-table-striped-bg: rgba(255,255,255,.03);
+    --bs-table-striped-color: var(--text);
+
+    --bs-table-hover-bg: rgba(255,255,255,.05);
+    --bs-table-hover-color: var(--text);
+
+    margin:0;
+    background: transparent !important;
+  }
+  html[data-theme="light"] .mini-table .table{
+    --bs-table-striped-bg: rgba(2,6,23,.03);
+    --bs-table-hover-bg: rgba(2,6,23,.05);
+  }
+  .mini-table thead th{
+    font-size:12px;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    color:var(--muted) !important;
+    background: rgba(255,255,255,.04) !important;
+    border-bottom:1px solid var(--border) !important;
+  }
+  html[data-theme="light"] .mini-table thead th{
+    background: rgba(2,6,23,.03) !important;
+  }
+  .mini-table tbody td{
+    color: var(--text) !important;
+    background: transparent !important;
+    border-top:1px solid var(--border) !important;
+    font-size:13px;
+  }
+  .mini-table tbody tr:nth-child(even) td{
+    background: rgba(255,255,255,.02) !important;
+  }
+
+  .truncate{
+    max-width: 320px;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>
+
+<!-- ✅ SNAPSHOT FRAME (single frame like your examples) -->
+<div class="snap-frame mb-3">
+  <div class="snap-top">
+    <div>
+      <div class="section-title">Dashboard Snapshot</div>
+      <div class="muted small">One-frame summary (KPIs + key charts)</div>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <div></div>
+    </div>
+  </div>
+
+  <div class="snap-grid">
+    <div class="snap-card">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="fw-semibold">Distribution Trend</div>
+        <span class="chip"><i class="bi bi-graph-up"></i> Price Hist</span>
+      </div>
+      <div class="chart-wrap xs"><canvas id="snapLine"></canvas></div>
+    </div>
+
+    <div class="snap-charts">
+      <div class="snap-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-semibold">Bucket Mix</div>
+          <span class="chip"><i class="bi bi-pie-chart"></i></span>
+        </div>
+        <div class="chart-wrap xs"><canvas id="snapDonut"></canvas></div>
+      </div>
+
+      <div class="snap-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-semibold">Top States</div>
+          <span class="chip"><i class="bi bi-map"></i></span>
+        </div>
+        <div class="chart-wrap xs"><canvas id="snapBar"></canvas></div>
+      </div>
+
+      <div class="snap-card" style="grid-column:1 / span 2;">
+        <div class="row g-2">
+          <div class="col-6 col-md-3">
+            <div class="kpi-title">Records</div>
+            <div class="fw-bold fs-4" id="s_total">—</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="kpi-title">Suppliers</div>
+            <div class="fw-bold fs-4" id="s_sup">—</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="kpi-title">Cities</div>
+            <div class="fw-bold fs-4" id="s_city">—</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="kpi-title">Median Price</div>
+            <div class="fw-bold fs-4" id="s_med">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Rest of Overview content -->
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Total Records</div>
+          <div id="k_total" class="kpi-value">—</div>
+          <div class="kpi-sub">clean_data.csv</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-database fs-5"></i></div>
+      </div>
+      <div class="mt-2"><span id="t_total" class="trend">—</span></div>
+      <div class="spark-wrap"><canvas id="sp_total"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Unique Suppliers</div>
+          <div id="k_sup" class="kpi-value">—</div>
+          <div class="kpi-sub">supplier_name</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-people fs-5"></i></div>
+      </div>
+      <div class="mt-2"><span id="t_sup" class="trend">—</span></div>
+      <div class="spark-wrap"><canvas id="sp_sup"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Unique Cities</div>
+          <div id="k_city" class="kpi-value">—</div>
+          <div class="kpi-sub">coverage</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-geo-alt fs-5"></i></div>
+      </div>
+      <div class="mt-2"><span id="t_city" class="trend">—</span></div>
+      <div class="spark-wrap"><canvas id="sp_city"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="kpi-row">
+        <div>
+          <div class="kpi-title">Median Price</div>
+          <div id="k_med" class="kpi-value">—</div>
+          <div class="kpi-sub">price_numeric</div>
+        </div>
+        <div class="kpi-ico"><i class="bi bi-currency-rupee fs-5"></i></div>
+      </div>
+      <div class="mt-2"><span id="t_med" class="trend">—</span></div>
+      <div class="spark-wrap"><canvas id="sp_med"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Top Cities</div>
+          <div class="muted small">Main distribution</div>
+        </div>
+        <span class="chip"><i class="bi bi-bar-chart me-1"></i> Top 12</span>
+      </div>
+      <div class="chart-wrap mt-2"><canvas id="cityChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Price Bucket Mix</div>
+          <div class="muted small">Market mix</div>
+        </div>
+        <span class="chip"><i class="bi bi-pie-chart me-1"></i> Mix</span>
+      </div>
+      <div class="chart-wrap mt-2"><canvas id="bucketChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="cardx p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="section-title">Quick Preview</div>
+          <div class="muted small">A few rows (sanity check)</div>
+        </div>
+        <a class="chip" href="/table/">
+          <i class="bi bi-grid-3x3-gap me-1"></i> Full Table
+        </a>
+      </div>
+
+      <div class="mini-table mt-3">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Supplier</th>
+                <th>City</th>
+                <th class="text-end">Price</th>
+              </tr>
+            </thead>
+            <tbody id="miniTableBody">
+              <tr><td colspan="4" class="muted">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script>
+  let snapLine, snapDonut, snapBar;
+  let cityChart, bucketChart;
+  let spTotal, spSup, spCity, spMed;
+
+  async function fetchJSON(url){ const r = await fetch(url); return await r.json(); }
+
+  function formatINR(x){
+    if(x === null || x === undefined) return "—";
+    try{ return "₹ " + Number(x).toLocaleString("en-IN", {maximumFractionDigits: 0}); }
+    catch(e){ return "₹ " + x; }
+  }
+
+  function pctChange(curr, base){ if(base === 0) return null; return ((curr - base) / base) * 100; }
+  function setTrend(elId, curr, base){
+    const el = document.getElementById(elId);
+    if(base == null){
+      el.className = "trend";
+      el.innerHTML = `<i class="bi bi-dash"></i> baseline set`;
+      return;
+    }
+    const p = pctChange(curr, base);
+    if(p == null){ el.className="trend"; el.innerHTML=`<i class="bi bi-dash"></i> —`; return; }
+    const up = p >= 0;
+    el.className = "trend " + (up ? "good" : "bad");
+    const icon = up ? "bi-arrow-up-right" : "bi-arrow-down-right";
+    el.innerHTML = `<i class="bi ${icon}"></i> ${up?"+":""}${p.toFixed(1)}%`;
+  }
+
+  // Sparklines
+  const SP_KEY = "b2b_kpi_spark_overview_v4";
+  function getSparkState(){ try{ return JSON.parse(localStorage.getItem(SP_KEY) || "{}"); }catch(e){ return {}; } }
+  function setSparkState(obj){ localStorage.setItem(SP_KEY, JSON.stringify(obj)); }
+  function pushSpark(name, value, maxLen=18){
+    const s = getSparkState();
+    const arr = Array.isArray(s[name]) ? s[name] : [];
+    arr.push(Number(value) || 0);
+    while(arr.length > maxLen) arr.shift();
+    s[name] = arr;
+    setSparkState(s);
+    return arr;
+  }
+
+  function sparkOptions(){
+    return {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{enabled:false} },
+      scales:{ x:{display:false}, y:{display:false} },
+      elements:{ line:{borderWidth:2}, point:{radius:0} },
+      animation:{duration:0}
+    };
+  }
+
+  function buildSpark(existing, canvasId, data, color){
+    if(existing) existing.destroy();
+    return new Chart(document.getElementById(canvasId), {
+      type:"line",
+      data:{ labels:data.map((_,i)=>i+1), datasets:[{
+        data,
+        borderColor: withAlpha(color, 0.95),
+        backgroundColor: withAlpha(color, 0.14),
+        fill:true,
+        tension:.35
+      }]},
+      options: sparkOptions()
+    });
+  }
+
+  function buildBar(canvas, labels, values, color){
+    const ctx = canvas.getContext("2d");
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height || 400);
+    grad.addColorStop(0, withAlpha(color, 0.80));
+    grad.addColorStop(1, withAlpha(color, 0.18));
+
+    return new Chart(canvas, {
+      type:"bar",
+      data:{ labels, datasets:[{
+        data:values,
+        backgroundColor: grad,
+        borderColor: withAlpha(color, 0.95),
+        borderWidth:1,
+        borderRadius:12,
+        maxBarThickness:44
+      }]},
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ ticks:{color:Chart.defaults.color, maxRotation:0}, grid:{display:false} },
+          y:{ ticks:{color:Chart.defaults.color}, grid:{color:Chart.defaults.borderColor} },
+        },
+        animation:{duration:600}
+      }
+    });
+  }
+
+  function buildDoughnut(canvas, labels, values){
+    const pal = [
+      DASH_COLORS.cyan, DASH_COLORS.indigo, DASH_COLORS.emerald,
+      DASH_COLORS.amber, DASH_COLORS.rose, DASH_COLORS.violet, DASH_COLORS.slate
+    ].slice(0, labels.length);
+
+    return new Chart(canvas, {
+      type:"doughnut",
+      data:{ labels, datasets:[{
+        data:values,
+        backgroundColor: pal.map(c => withAlpha(c, 0.80)),
+        borderColor: pal.map(c => withAlpha(c, 1.0)),
+        borderWidth:1
+      }]},
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        cutout:"72%",
+        plugins:{ legend:{position:"bottom", labels:{color:Chart.defaults.color, boxWidth:10}} },
+        animation:{duration:600}
+      }
+    });
+  }
+
+  function buildLine(canvas, labels, values, color){
+    return new Chart(canvas, {
+      type:"line",
+      data:{ labels, datasets:[{
+        data: values,
+        borderColor: withAlpha(color, 0.95),
+        backgroundColor: withAlpha(color, 0.14),
+        borderWidth: 2,
+        tension: .35,
+        pointRadius: 2,
+        fill: true
+      }]},
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ ticks:{color:Chart.defaults.color, maxRotation:0}, grid:{color:Chart.defaults.borderColor} },
+          y:{ ticks:{color:Chart.defaults.color}, grid:{color:Chart.defaults.borderColor} },
+        },
+        animation:{duration:600}
+      }
+    });
+  }
+
+  async function loadMiniRows(){
+    const data = await fetchJSON("/api/mini-rows/?n=8");
+    const tb = document.getElementById("miniTableBody");
+    tb.innerHTML = "";
+
+    if(!data.rows || data.rows.length === 0){
+      tb.innerHTML = `<tr><td colspan="4" class="muted">No rows found.</td></tr>`;
+      return;
+    }
+
+    data.rows.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="truncate" title="${String(r.product_name||"").replaceAll('"','')}">${r.product_name || "—"}</td>
+        <td class="truncate" title="${String(r.supplier_name||"").replaceAll('"','')}">${r.supplier_name || "—"}</td>
+        <td>${r.city || "—"}</td>
+        <td class="text-end">${formatINR(r.price_numeric)}</td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
+
+  async function loadKPIs(){
+    const s = await fetchJSON("/api/summary/");
+
+    // Snapshot KPI
+    document.getElementById("s_total").innerText = s.total_rows.toLocaleString();
+    document.getElementById("s_sup").innerText   = s.unique_suppliers.toLocaleString();
+    document.getElementById("s_city").innerText  = s.unique_cities.toLocaleString();
+    document.getElementById("s_med").innerText   = formatINR(s.median_price);
+
+    // Main KPI
+    document.getElementById("k_total").innerText = s.total_rows.toLocaleString();
+    document.getElementById("k_sup").innerText   = s.unique_suppliers.toLocaleString();
+    document.getElementById("k_city").innerText  = s.unique_cities.toLocaleString();
+    document.getElementById("k_med").innerText   = formatINR(s.median_price);
+
+    // Baseline trend
+    const baseKey = "b2b_kpi_baseline_overview_v4";
+    let base = null;
+    try{ base = JSON.parse(localStorage.getItem(baseKey) || "null"); }catch(e){ base = null; }
+
+    if(!base){
+      base = {
+        total_rows: s.total_rows,
+        unique_suppliers: s.unique_suppliers,
+        unique_cities: s.unique_cities,
+        median_price: s.median_price
+      };
+      localStorage.setItem(baseKey, JSON.stringify(base));
+      setTrend("t_total", s.total_rows, null);
+      setTrend("t_sup", s.unique_suppliers, null);
+      setTrend("t_city", s.unique_cities, null);
+      setTrend("t_med", s.median_price, null);
+    }else{
+      setTrend("t_total", s.total_rows, base.total_rows);
+      setTrend("t_sup", s.unique_suppliers, base.unique_suppliers);
+      setTrend("t_city", s.unique_cities, base.unique_cities);
+      setTrend("t_med", s.median_price, base.median_price);
+    }
+
+    // Sparklines
+    spTotal = buildSpark(spTotal, "sp_total", pushSpark("total_rows", s.total_rows), DASH_COLORS.cyan);
+    spSup   = buildSpark(spSup,   "sp_sup",   pushSpark("unique_suppliers", s.unique_suppliers), DASH_COLORS.indigo);
+    spCity  = buildSpark(spCity,  "sp_city",  pushSpark("unique_cities", s.unique_cities), DASH_COLORS.emerald);
+    spMed   = buildSpark(spMed,   "sp_med",   pushSpark("median_price", s.median_price), DASH_COLORS.amber);
+  }
+
+  async function loadCharts(){
+    const c  = await fetchJSON("/api/top-cities/");
+    const b  = await fetchJSON("/api/price-buckets/");
+    const st = await fetchJSON("/api/top-states/");
+    const h  = await fetchJSON("/api/price-hist/");
+
+    // destroy old
+    [cityChart, bucketChart, snapLine, snapDonut, snapBar].forEach(ch => ch && ch.destroy());
+    cityChart=bucketChart=snapLine=snapDonut=snapBar=null;
+
+    // Snapshot charts
+    snapLine  = buildLine(document.getElementById("snapLine"), h.bins, h.counts, DASH_COLORS.emerald);
+    snapDonut = buildDoughnut(document.getElementById("snapDonut"), b.labels, b.values);
+    snapBar   = buildBar(document.getElementById("snapBar"), st.labels.slice(0,6), st.values.slice(0,6), DASH_COLORS.cyan);
+
+    // Main charts
+    cityChart   = buildBar(document.getElementById("cityChart"), c.labels, c.values, DASH_COLORS.indigo);
+    bucketChart = buildDoughnut(document.getElementById("bucketChart"), b.labels, b.values);
+  }
+
+  async function fullReload(){
+    await loadKPIs();
+    await loadCharts();
+    await loadMiniRows();
+  }
+
+  window.addEventListener("b2b-theme-changed", async () => {
+    // rebuild everything to match new Chart.defaults colors
+    [cityChart,bucketChart,snapLine,snapDonut,snapBar,spTotal,spSup,spCity,spMed].forEach(ch => ch && ch.destroy());
+    cityChart=bucketChart=snapLine=snapDonut=snapBar=spTotal=spSup=spCity=spMed=null;
+    await fullReload();
+  });
+
+  document.getElementById("btnRefresh").addEventListener("click", fullReload);
+  (async function init(){ await fullReload(); })();
+</script>
+{% endblock %}
