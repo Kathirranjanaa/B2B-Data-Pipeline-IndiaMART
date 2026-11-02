@@ -35,6 +35,8 @@ def main() -> None:
     p.add_argument("--driver", default=None, help="Path to chromedriver.exe (optional; if omitted Selenium Manager will try to auto-manage).")
     p.add_argument("--scraped-csv", default="indiamart_21_keywords_products.csv")
     p.add_argument("--clean-csv", default="clean_data.csv")
+    p.add_argument("--checkpoint", default=None)
+    p.add_argument("--partial", default=None)
     args = p.parse_args()
 
     if args.stage in ("all", "scrape"):
@@ -48,6 +50,10 @@ def main() -> None:
             cmd.extend(["--driver", args.driver])
         if args.headless:
             cmd.append("--headless")
+        if args.checkpoint:
+            cmd.extend(["--checkpoint", args.checkpoint])
+        if args.partial:
+            cmd.extend(["--partial", args.partial])
         run(cmd)
 
     if args.stage in ("all", "etl"):

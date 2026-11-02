@@ -15,7 +15,7 @@ from matplotlib.patches import Rectangle
 # =========================================================
 # SETTINGS
 # =========================================================
-INPUT_CSV = "clean_data.csv"
+INPUT_CSV = "fresh_clean_data.csv"
 PLOTS_DIR = "plots"
 
 DPI = 160                         # slightly sharper

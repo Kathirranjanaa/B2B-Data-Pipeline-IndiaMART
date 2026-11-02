@@ -8,7 +8,7 @@ from django.shortcuts import render
 
 # B2B_Data_Pipeline (one level above dashboard folder)
 BASE_PIPELINE_DIR = os.path.dirname(settings.BASE_DIR)
-CLEAN_CSV = os.path.join(BASE_PIPELINE_DIR, "clean_data.csv")
+CLEAN_CSV = os.path.join(BASE_PIPELINE_DIR, "fresh_clean_data.csv")
 
 
 # ----------------------------
